@@ -1,0 +1,12 @@
+<!-- res/values/styles.xml -->
+<resources>
+    <!-- Default App Theme -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here -->
+    </style>
+
+    <!-- ZXing Theme -->
+    <style name="zxingTheme" parent="Theme.AppCompat.Light">
+        <!-- Customize ZXing theme if needed -->
+    </style>
+</resources>
