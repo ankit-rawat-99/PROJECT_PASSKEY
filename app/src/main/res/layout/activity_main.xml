@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -56,7 +55,36 @@
             android:text="Enter Token"
             android:background="@drawable/rounded_button"
             android:textColor="#FFFFFF" />
+    </LinearLayout>
 
+    <!-- Show Credentials and Website DB Buttons in a Horizontal Layout -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp">
+
+        <!-- Show Credentials Button -->
+        <Button
+            android:id="@+id/showCredentialsButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Show Credentials"
+            android:background="@drawable/rounded_button"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Website DB Button -->
+        <Button
+            android:id="@+id/websiteDBButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Website DB"
+            android:background="@drawable/rounded_button"
+            android:textColor="#FFFFFF" />
     </LinearLayout>
 
     <!-- Login Status Indicator -->
