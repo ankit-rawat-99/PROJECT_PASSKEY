@@ -1,0 +1,27 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Save Credentials Item -->
+    <item
+        android:id="@+id/action_save_credentials"
+        android:icon="@drawable/ic_show_credentials"
+        android:title="Save Credentials" />
+
+    <!-- Enter Token Item -->
+    <item
+        android:id="@+id/action_enter_token"
+        android:icon="@drawable/ic_enter_token"
+        android:title="Enter Token" />
+
+    <!-- Show Credentials Item -->
+    <item
+        android:id="@+id/action_show_credentials"
+        android:icon="@drawable/ic_show_credentials"
+        android:title="Show Credentials" />
+
+    <!-- Website DB Item -->
+    <item
+        android:id="@+id/action_website_db"
+        android:icon="@drawable/ic_website_db"
+        android:title="Website DB" />
+
+</menu>

@@ -37,6 +37,11 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation ("com.journeyapps:zxing-android-embedded:4.3.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06") // Add this line
+    implementation ("com.airbnb.android:lottie:6.0.0")//animation
+    implementation ("de.hdodenhof:circleimageview:3.1.0")
+
+
+
 
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     testImplementation("junit:junit:4.13.2")

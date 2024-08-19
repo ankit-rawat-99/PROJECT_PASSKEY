@@ -9,4 +9,15 @@
     <style name="zxingTheme" parent="Theme.AppCompat.Light">
         <!-- Customize ZXing theme if needed -->
     </style>
+
+    <style name="CircularShapeAppearance" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">100dp</item>
+    </style>
+
+    <!-- Theme for the splash screen -->
+
+    <style name="Theme.Passkey_project_1.NoActionBar" parent="Theme.Passkey_project_1">
+        <item name="android:windowBackground">@drawable/blue_background</item>
+    </style>
 </resources>

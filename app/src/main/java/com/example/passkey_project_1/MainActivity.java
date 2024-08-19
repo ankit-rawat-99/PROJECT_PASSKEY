@@ -1,11 +1,13 @@
 package com.example.passkey_project_1;
 
 import android.Manifest;
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,8 +22,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.journeyapps.barcodescanner.CaptureActivity;
+import com.airbnb.lottie.LottieAnimationView;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.journeyapps.barcodescanner.ScanOptions;
+import com.journeyapps.barcodescanner.CaptureActivity;
 
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
@@ -35,9 +40,9 @@ public class MainActivity extends AppCompatActivity {
     private static final int STORAGE_PERMISSION_CODE = 101;
     private static final int QR_CODE_REQUEST_CODE = 102;
 
-    private FrameLayout cameraPreview;
     private TextView loginStatusTextView;
-    private Button scanToLoginButton;
+    private ExtendedFloatingActionButton fabScan;
+    private LottieAnimationView scanCompleteAnimationView;
 
     private SharedPreferences encryptedSharedPreferences;
 
@@ -47,17 +52,26 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Initialize UI components
-        cameraPreview = findViewById(R.id.cameraPreview);
         loginStatusTextView = findViewById(R.id.loginStatusTextView);
-        scanToLoginButton = findViewById(R.id.scanToLoginButton);
-        Button saveCredentialsButton = findViewById(R.id.saveCredentialsButton);
-        Button showCredentialsButton = findViewById(R.id.showCredentialsButton);
-        Button websiteDBButton = findViewById(R.id.websiteDBButton);
+        fabScan = findViewById(R.id.fabScan);
+        scanCompleteAnimationView = findViewById(R.id.scanCompleteAnimationView);
+
+        // Initially hide the animation view
+        scanCompleteAnimationView.setVisibility(View.GONE);
+
+        fabScan.setOnClickListener(v -> {
+            // Check camera permission and open QR scanner
+            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                openQRScanner();
+            } else {
+                Toast.makeText(MainActivity.this, "Please enable camera permission", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Initialize EncryptedSharedPreferences
         try {
             MasterKey masterKey = new MasterKey.Builder(this)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM) // Change to AES256_GCM if AES256_SIV is unavailable
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM) // Use AES256_GCM if AES256_SIV is unavailable
                     .build();
 
             encryptedSharedPreferences = EncryptedSharedPreferences.create(
@@ -71,57 +85,86 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-
-
         // Check and request necessary permissions
         checkCameraPermission();
         checkStoragePermission();
 
-        saveCredentialsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.action_save_credentials) {
                 showSaveCredentialsPopup();
+                return true;
+            } else if (itemId == R.id.action_enter_token) {
+                Toast.makeText(MainActivity.this, "Enter Token clicked", Toast.LENGTH_SHORT).show();
+                return true;
+            } else if (itemId == R.id.action_show_credentials) {
+                showSavedCredentials();
+                return true;
+            } else if (itemId == R.id.action_website_db) {
+                Toast.makeText(MainActivity.this, "Website DB clicked", Toast.LENGTH_SHORT).show();
+                return true;
             }
-        });
 
-        scanToLoginButton.setOnClickListener(new View.OnClickListener() {
+            return false;
+        });
+    }
+
+    private void playScanCompleteAnimation() {
+        scanCompleteAnimationView.setVisibility(View.VISIBLE);
+        scanCompleteAnimationView.playAnimation();
+
+        scanCompleteAnimationView.addAnimatorListener(new Animator.AnimatorListener() {
             @Override
-            public void onClick(View v) {
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                    openQRScanner();
-                } else {
-                    Toast.makeText(MainActivity.this, "Please enable camera permission", Toast.LENGTH_SHORT).show();
-                }
+            public void onAnimationStart(Animator animation) {
+                // No action needed when animation starts
             }
-        });
 
-        showCredentialsButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                // Retrieve and display all saved credentials
-                StringBuilder credentialsBuilder = new StringBuilder();
-                int credentialsCount = encryptedSharedPreferences.getInt("credentials_count", 0);
+            public void onAnimationEnd(Animator animation) {
+                scanCompleteAnimationView.setVisibility(View.GONE);
+            }
 
-                for (int i = 0; i < credentialsCount; i++) {
-                    String username = encryptedSharedPreferences.getString("credential_" + i + "_username", "No username");
-                    String password = encryptedSharedPreferences.getString("credential_" + i + "_password", "No password");
-                    credentialsBuilder.append("Username: ").append(username).append("\nPassword: ").append(password).append("\n\n");
-                }
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                // Handle if animation is canceled
+            }
 
-                String credentialsText = credentialsBuilder.toString();
-                if (credentialsText.isEmpty()) {
-                    credentialsText = "No credentials saved";
-                }
-
-                // Display the credentials in a Toast or Dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                builder.setTitle("Saved Credentials");
-                builder.setMessage(credentialsText);
-                builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-                builder.show();
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                // No action needed for repetition
             }
         });
+    }
 
+    private void handleScanSuccess(String scannedData) {
+        loginStatusTextView.setText("QR Code: " + scannedData);
+        loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+
+        playScanCompleteAnimation();
+    }
+
+    private void showSavedCredentials() {
+        StringBuilder credentialsBuilder = new StringBuilder();
+        int credentialsCount = encryptedSharedPreferences.getInt("credentials_count", 0);
+
+        for (int i = 0; i < credentialsCount; i++) {
+            String username = encryptedSharedPreferences.getString("credential_" + i + "_username", "No username");
+            String password = encryptedSharedPreferences.getString("credential_" + i + "_password", "No password");
+            credentialsBuilder.append("Username: ").append(username).append("\nPassword: ").append(password).append("\n\n");
+        }
+
+        String credentialsText = credentialsBuilder.toString();
+        if (credentialsText.isEmpty()) {
+            credentialsText = "No credentials saved";
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Saved Credentials");
+        builder.setMessage(credentialsText);
+        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
+        builder.show();
     }
 
     private void showSaveCredentialsPopup() {
@@ -173,12 +216,9 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(MainActivity.this, "Credentials saved", Toast.LENGTH_SHORT).show();
     }
 
-
     private void checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
-        } else {
-            openQRScanner();
         }
     }
 
@@ -204,9 +244,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == QR_CODE_REQUEST_CODE && resultCode == RESULT_OK) {
             String scannedData = data.getStringExtra("SCAN_RESULT");
-            loginStatusTextView.setText("QR Code: " + scannedData);
-            loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-            // TODO: Handle the scanned data (e.g., authenticate with the server)
+            handleScanSuccess(scannedData);
         } else {
             loginStatusTextView.setText("Scanning failed or canceled");
             loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
@@ -225,8 +263,9 @@ public class MainActivity extends AppCompatActivity {
                 loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
             }
         } else if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Storage permission is required to save credentials.", Toast.LENGTH_LONG).show();
+            if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                loginStatusTextView.setText("Storage permission is required to save credentials");
+                loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
             }
         }
     }
