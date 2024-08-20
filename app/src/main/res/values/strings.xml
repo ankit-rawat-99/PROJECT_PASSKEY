@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">passkey_project_1</string>
+    <string name="sgate">SGATE</string>
+    <string name="todo">TODO</string>
 </resources>

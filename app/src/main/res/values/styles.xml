@@ -18,6 +18,6 @@
     <!-- Theme for the splash screen -->
 
     <style name="Theme.Passkey_project_1.NoActionBar" parent="Theme.Passkey_project_1">
-        <item name="android:windowBackground">@drawable/blue_background</item>
+
     </style>
 </resources>

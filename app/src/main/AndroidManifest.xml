@@ -23,17 +23,6 @@
         android:theme="@style/Theme.Passkey_project_1"
         tools:targetApi="31">
 
-        <!-- Splash Activity -->
-        <activity
-            android:name=".SplashActivity"
-            android:theme="@style/Theme.Passkey_project_1.NoActionBar"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <!-- MainActivity configuration -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -46,9 +35,12 @@
         <!-- ZXing CaptureActivity configuration for QR scanning -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
-            android:screenOrientation="portrait"
+            android:Orientation="portrait"
             android:theme="@style/zxingTheme"
             tools:replace="android:screenOrientation, android:theme" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
     </application>
 
 
