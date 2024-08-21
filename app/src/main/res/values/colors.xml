@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="purple_200">#9C27B0</color>
+    <color name="white">#FFFFFFFF</color>zz
+    <!-- Primary App Color -->
+    <color name="colorPrimary">#F6F6F6</color>
+
+    <!-- Gray Color for Unselected State -->
+    <color name="colorGray">#9E9E9E</color>
+</resources>
