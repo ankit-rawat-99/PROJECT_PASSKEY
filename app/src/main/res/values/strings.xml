@@ -2,4 +2,7 @@
     <string name="app_name">passkey_project_1</string>
     <string name="sgate">SGATE</string>
     <string name="todo">TODO</string>
+    <string name="com_auth0_client_id">uft8kFHhobA7TvnEy7cGj8K2Yzfd3RQJ</string>
+    <string name="com_auth0_domain">dev-bwiwzr4uttz5nhod.us.auth0.com</string>
+
 </resources>

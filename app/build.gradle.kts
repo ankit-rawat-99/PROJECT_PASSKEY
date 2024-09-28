@@ -1,5 +1,6 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -40,10 +41,14 @@ dependencies {
     implementation("androidx.security:security-crypto:1.1.0-alpha06") // Add this line
     implementation ("com.airbnb.android:lottie:6.0.0")//animation
     implementation ("de.hdodenhof:circleimageview:3.1.0")
-
-
-
-
+    implementation ("androidx.activity:activity-ktx:1.9.2")
+    implementation ("androidx.fragment:fragment-ktx:1.8.3")
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation ("com.auth0.android:auth0:2.9.0")
+    implementation ("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

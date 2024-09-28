@@ -2,15 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Camera and Vibrate permissions -->
+    <!-- Permissions for camera, vibrate, and storage -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE" />
-
-    <!-- Storage permission -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -23,7 +25,7 @@
         android:theme="@style/Theme.Passkey_project_1"
         tools:targetApi="31">
 
-        <!-- SplashActivity should be the launcher activity -->
+        <!-- SplashActivity as the launcher activity -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -39,13 +41,40 @@
             android:name=".MainActivity"
             android:exported="true" />
 
-        <!-- ZXing CaptureActivity configuration for QR scanning -->
+        <!-- ZXing CaptureActivity for QR scanning -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="portrait"
             android:theme="@style/zxingTheme"
-            tools:replace="android:screenOrientation, android:theme" />
+            tools:replace="android:screenOrientation,android:theme" />
 
+        <!-- Auth0 Authentication Activity -->
+        <activity android:name="com.auth0.android.provider.AuthenticationActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http://localhost:1234"
+                    android:host="dev-bwiwzr4uttz5nhod.us.auth0.com" />
+            </intent-filter>
+        </activity>
+
+        <!-- Auth0 Redirect Activity for SSO -->
+        <activity
+            android:name="com.auth0.android.provider.RedirectActivity"
+            android:exported="true"
+            tools:node="replace">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https"
+                    android:host="dev-bwiwzr4uttz5nhod.us.auth0.com"
+                    android:pathPrefix="/android/com.example.passkey_project_1/callback" />
+            </intent-filter>
+        </activity>
+
+        <!-- Meta-data for preloaded fonts -->
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />

@@ -6,12 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,8 +22,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.airbnb.lottie.LottieAnimationView;
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.journeyapps.barcodescanner.ScanOptions;
 import com.journeyapps.barcodescanner.CaptureActivity;
 
@@ -33,6 +32,14 @@ import androidx.security.crypto.MasterKey;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -89,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         checkCameraPermission();
         checkStoragePermission();
 
+        // Initialize bottom navigation
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
@@ -138,12 +146,21 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // Function to handle the scanned QR code data
     private void handleScanSuccess(String scannedData) {
-        loginStatusTextView.setText("QR Code: " + scannedData);
-        loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        // Extract token from the scanned URL
+        Uri uri = Uri.parse(scannedData);
+        String token = uri.getQueryParameter("token");
 
-        playScanCompleteAnimation();
+        if (token != null) {
+            // Send token to the server for validation
+            validateTokenWithServer(token);
+        } else {
+            loginStatusTextView.setText("Invalid QR code.");
+            loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        }
     }
+
 
     private void showSavedCredentials() {
         StringBuilder credentialsBuilder = new StringBuilder();
@@ -238,35 +255,41 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(options.createScanIntent(this), QR_CODE_REQUEST_CODE);
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == QR_CODE_REQUEST_CODE && resultCode == RESULT_OK) {
-            String scannedData = data.getStringExtra("SCAN_RESULT");
-            handleScanSuccess(scannedData);
-        } else {
-            loginStatusTextView.setText("Scanning failed or canceled");
-            loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-        }
+    public interface ApiService {
+        @GET("auth")
+        Call<Void> validateToken(@Query("token") String token);
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    private void validateTokenWithServer(String token) {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://localhost:3000")  // Replace with your server URL
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
 
-        if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                openQRScanner();
-            } else {
-                loginStatusTextView.setText("Please enable camera permission in settings");
+        ApiService apiService = retrofit.create(ApiService.class);
+        Call<Void> call = apiService.validateToken(token);
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // Login successful
+                    loginStatusTextView.setText("Login successful!");
+                    loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                    playScanCompleteAnimation();
+                } else {
+                    // Handle error (e.g., token expired or invalid)
+                    loginStatusTextView.setText("Login failed. Invalid token.");
+                    loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                // Handle failure
+                loginStatusTextView.setText("Error: " + t.getMessage());
                 loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
             }
-        } else if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (!(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                loginStatusTextView.setText("Storage permission is required to save credentials");
-                loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-            }
-        }
+        });
     }
 }
