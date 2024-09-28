@@ -63,11 +63,11 @@ public class MainActivity extends AppCompatActivity {
         fabScan = findViewById(R.id.fabScan);
         scanCompleteAnimationView = findViewById(R.id.scanCompleteAnimationView);
 
-        // Initially hide the animation view
+        // Hide animation view initially
         scanCompleteAnimationView.setVisibility(View.GONE);
 
         fabScan.setOnClickListener(v -> {
-            // Check camera permission and open QR scanner
+            // Check camera permission before opening QR scanner
             if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 openQRScanner();
             } else {
@@ -75,10 +75,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Initialize EncryptedSharedPreferences
+        // Initialize EncryptedSharedPreferences for securely saving credentials
+        initializeEncryptedSharedPreferences();
+
+        // Request camera and storage permissions
+        checkCameraPermission();
+        checkStoragePermission();
+
+        // Setup bottom navigation menu
+        setupBottomNavigation();
+    }
+
+    // Function to initialize encrypted shared preferences
+    private void initializeEncryptedSharedPreferences() {
         try {
             MasterKey masterKey = new MasterKey.Builder(this)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM) // Use AES256_GCM if AES256_SIV is unavailable
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                     .build();
 
             encryptedSharedPreferences = EncryptedSharedPreferences.create(
@@ -91,13 +103,103 @@ public class MainActivity extends AppCompatActivity {
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
         }
+    }
 
-        // Check and request necessary permissions
-        checkCameraPermission();
-        checkStoragePermission();
+    // Play animation after successful scan
+    private void playScanCompleteAnimation() {
+        scanCompleteAnimationView.setVisibility(View.VISIBLE);
+        scanCompleteAnimationView.playAnimation();
 
-        // Initialize bottom navigation
+        scanCompleteAnimationView.addAnimatorListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                scanCompleteAnimationView.setVisibility(View.GONE);
+            }
+            @Override public void onAnimationStart(Animator animation) {}
+            @Override public void onAnimationCancel(Animator animation) {}
+            @Override public void onAnimationRepeat(Animator animation) {}
+        });
+    }
+
+    // Handle QR code data when successfully scanned
+    private void handleScanSuccess(String scannedData) {
+        Uri uri = Uri.parse(scannedData);
+        String token = uri.getQueryParameter("token");
+
+        if (token != null) {
+            // Validate token with the server
+            validateTokenWithServer(token);
+        } else {
+            loginStatusTextView.setText("Invalid QR code.");
+            loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+        }
+    }
+
+    // Show saved credentials in an alert dialog
+    private void showSavedCredentials() {
+        StringBuilder credentialsBuilder = new StringBuilder();
+        int credentialsCount = encryptedSharedPreferences.getInt("credentials_count", 0);
+
+        for (int i = 0; i < credentialsCount; i++) {
+            String username = encryptedSharedPreferences.getString("credential_" + i + "_username", "No username");
+            String password = encryptedSharedPreferences.getString("credential_" + i + "_password", "No password");
+            credentialsBuilder.append("Username: ").append(username).append("\nPassword: ").append(password).append("\n\n");
+        }
+
+        String credentialsText = credentialsBuilder.length() > 0 ? credentialsBuilder.toString() : "No credentials saved";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Saved Credentials")
+                .setMessage(credentialsText)
+                .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                .show();
+    }
+
+    // Save credentials using encrypted shared preferences
+    private void saveCredentials(String username, String password) {
+        SharedPreferences.Editor editor = encryptedSharedPreferences.edit();
+        int credentialsCount = encryptedSharedPreferences.getInt("credentials_count", 0);
+        String credentialsKey = "credential_" + credentialsCount;
+
+        // Save credentials
+        editor.putString(credentialsKey + "_username", username);
+        editor.putString(credentialsKey + "_password", password);
+        editor.putInt("credentials_count", credentialsCount + 1);
+        editor.apply();
+
+        Toast.makeText(MainActivity.this, "Credentials saved", Toast.LENGTH_SHORT).show();
+    }
+
+    // Check camera permission
+    private void checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+        }
+    }
+
+    // Check storage permission
+    private void checkStoragePermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
+        }
+    }
+
+    // Open the QR scanner
+    private void openQRScanner() {
+        ScanOptions options = new ScanOptions();
+        options.setPrompt("Scan a QR code");
+        options.setBeepEnabled(true);
+        options.setOrientationLocked(true);
+        options.setCaptureActivity(CaptureActivity.class);
+
+        startActivityForResult(options.createScanIntent(this), QR_CODE_REQUEST_CODE);
+    }
+
+
+    // Setup bottom navigation menu interactions
+    private void setupBottomNavigation() {
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
             int itemId = item.getItemId();
 
@@ -119,71 +221,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void playScanCompleteAnimation() {
-        scanCompleteAnimationView.setVisibility(View.VISIBLE);
-        scanCompleteAnimationView.playAnimation();
-
-        scanCompleteAnimationView.addAnimatorListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-                // No action needed when animation starts
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                scanCompleteAnimationView.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                // Handle if animation is canceled
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-                // No action needed for repetition
-            }
-        });
-    }
-
-    // Function to handle the scanned QR code data
-    private void handleScanSuccess(String scannedData) {
-        // Extract token from the scanned URL
-        Uri uri = Uri.parse(scannedData);
-        String token = uri.getQueryParameter("token");
-
-        if (token != null) {
-            // Send token to the server for validation
-            validateTokenWithServer(token);
-        } else {
-            loginStatusTextView.setText("Invalid QR code.");
-            loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-        }
-    }
-
-
-    private void showSavedCredentials() {
-        StringBuilder credentialsBuilder = new StringBuilder();
-        int credentialsCount = encryptedSharedPreferences.getInt("credentials_count", 0);
-
-        for (int i = 0; i < credentialsCount; i++) {
-            String username = encryptedSharedPreferences.getString("credential_" + i + "_username", "No username");
-            String password = encryptedSharedPreferences.getString("credential_" + i + "_password", "No password");
-            credentialsBuilder.append("Username: ").append(username).append("\nPassword: ").append(password).append("\n\n");
-        }
-
-        String credentialsText = credentialsBuilder.toString();
-        if (credentialsText.isEmpty()) {
-            credentialsText = "No credentials saved";
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("Saved Credentials");
-        builder.setMessage(credentialsText);
-        builder.setPositiveButton("OK", (dialog, which) -> dialog.dismiss());
-        builder.show();
-    }
-
+    // Show popup for saving credentials
     private void showSaveCredentialsPopup() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Save Credentials");
@@ -202,7 +240,6 @@ public class MainActivity extends AppCompatActivity {
         layout.addView(inputConfirmPassword);
 
         builder.setView(layout);
-
         builder.setPositiveButton("Save", (dialog, which) -> {
             String username = inputUsername.getText().toString();
             String password = inputPassword.getText().toString();
@@ -215,54 +252,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-
         builder.show();
     }
 
-    private void saveCredentials(String username, String password) {
-        SharedPreferences.Editor editor = encryptedSharedPreferences.edit();
-        int credentialsCount = encryptedSharedPreferences.getInt("credentials_count", 0);
-        String credentialsKey = "credential_" + credentialsCount;
-
-        // Save credentials
-        editor.putString(credentialsKey + "_username", username);
-        editor.putString(credentialsKey + "_password", password);
-        editor.putInt("credentials_count", credentialsCount + 1);
-        editor.apply();
-
-        Toast.makeText(MainActivity.this, "Credentials saved", Toast.LENGTH_SHORT).show();
-    }
-
-    private void checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
-        }
-    }
-
-    private void checkStoragePermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, STORAGE_PERMISSION_CODE);
-        }
-    }
-
-    private void openQRScanner() {
-        ScanOptions options = new ScanOptions();
-        options.setPrompt("Scan a QR code");
-        options.setBeepEnabled(true);
-        options.setOrientationLocked(true);
-        options.setCaptureActivity(CaptureActivity.class);
-
-        startActivityForResult(options.createScanIntent(this), QR_CODE_REQUEST_CODE);
-    }
-
+    // Retrofit API interface to validate the token with the server
     public interface ApiService {
         @GET("auth")
         Call<Void> validateToken(@Query("token") String token);
     }
 
+    // Validate token by making a call to the backend server hosted on Render
     private void validateTokenWithServer(String token) {
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://localhost:3000")  // Replace with your server URL
+                .baseUrl("https://project-passkey.onrender.com")  // Use your server's URL
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
@@ -271,24 +273,20 @@ public class MainActivity extends AppCompatActivity {
 
         call.enqueue(new Callback<Void>() {
             @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                 if (response.isSuccessful()) {
-                    // Login successful
+                    playScanCompleteAnimation();
                     loginStatusTextView.setText("Login successful!");
                     loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-                    playScanCompleteAnimation();
                 } else {
-                    // Handle error (e.g., token expired or invalid)
-                    loginStatusTextView.setText("Login failed. Invalid token.");
+                    loginStatusTextView.setText("Invalid token. Please try again.");
                     loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                 }
             }
 
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                // Handle failure
-                loginStatusTextView.setText("Error: " + t.getMessage());
-                loginStatusTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                Toast.makeText(MainActivity.this, "Error connecting to server", Toast.LENGTH_SHORT).show();
             }
         });
     }
