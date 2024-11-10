@@ -85,9 +85,9 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="42dp"
-        android:text="Scanning failed or canceled"
         android:textColor="#FF0000"
         android:textSize="16sp" />
+
 
     <!-- Bottom Toolbar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
